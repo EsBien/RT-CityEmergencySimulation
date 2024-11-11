@@ -10,6 +10,7 @@
 void vEventTimerCallback(TimerHandle_t xTimer) {
 
     EmergencyEvent_t newEvent = { .eventCode = -1,.message = {0} };
+    LogEntry_t logEntry;
 
     newEvent.eventCode = (rand() % 4) + 1; // 1,2,3,4
     newEvent.priority = getEventPriority(newEvent.eventCode);
@@ -24,13 +25,17 @@ void vEventTimerCallback(TimerHandle_t xTimer) {
         snprintf(newEvent.message, sizeof(newEvent.message), "Fire emergency reported");
         break;
     default:
-        printf("Dispatcher: Unknown event code received.\n");
+        snprintf(newEvent.message, sizeof(newEvent.message), "Unknown event received");
         break;
     }
 
+    initLog(&logEntry, "Event Generated", newEvent.eventCode, "Timer Callback", 0, newEvent.message, xTaskGetTickCount());
+    logEvent(logEntry);
+
     BaseType_t xHigherPriorityTaskWoken = pdFALSE; //do i need this
     if (xQueueSendFromISR(xDispatcherQueue, &newEvent, &xHigherPriorityTaskWoken) == pdFAIL) {// Interrupt Service Routine
-        printf("Faile to Send event to DispatcherQueueDispatcherQueue.\n");
+        initLog(&logEntry, "Queue Send Failed", newEvent.eventCode, "Dispatcher Queue", 0, "Send Failed", xTaskGetTickCount());
+        logEvent(logEntry);
     }
 
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken); //ensures timely response by immediately switching 
@@ -40,6 +45,10 @@ void vEventTimerCallback(TimerHandle_t xTimer) {
     int newInterval = (rand() % 5 + 1) * 1000;
     xTimerChangePeriod(xTimer, pdMS_TO_TICKS(newInterval), 0);
     xTimerStart(xTimer, 0);
+
+    // Log the timer restart with the new interval
+    initLog(&logEntry, "Timer Restarted", -1, "Event Timer", newInterval, "New Interval Set", xTaskGetTickCount());
+    logEvent(logEntry);
 
 }
 
@@ -63,29 +72,24 @@ void vDispatcherTask(void* param) {
 
             // Handle the highest-priority event in the sorted array
             EmergencyEvent_t eventToHandle = ptiotityQueueEvents[0];
-            //printf("Dispatcher received event code: %d //// %d/////, message: %s////%s////\n",
-            //    eventToHandle.eventCode, receivedEvent.eventCode, eventToHandle.message, receivedEvent.message); //ex to check
+
             const char*  departmentName = NULL;
             switch (eventToHandle.eventCode) {
             case POLICE_CODE:
-                //printf("Dispatcher forwarding to Police Department.\n");
                 departmentName = "Police Department";
                 xSemaphoreGive(xPoliceSemaphore);
                 break;
             case AMBULANCE_CODE:
-                //printf("Dispatcher forwarding to Ambulance Department.\n");
                 departmentName = "Ambulance Department";
                 xSemaphoreGive(xAmbulanceSemaphore);
                 // Trigger ambulance response
                 break;
             case FIRE_CODE:
-                //printf("Dispatcher forwarding to Fire Department.\n");
                 departmentName = "Fire Department";
                 xSemaphoreGive(xFireSemaphore);
                 // Trigger fire department response
                 break;
             case CORONA_CODE:
-                //printf("Dispatcher forwarding to corona Department.\n");
                 departmentName = "Covid Department";
                 xSemaphoreGive(xCovidSemaphore);
                 // Trigger fire department response

@@ -1,5 +1,6 @@
 
 #include "DepartmentManagment.h"
+#include "Logging.h"
 // Semaphore declarations
 SemaphoreHandle_t xPoliceSemaphore;
 SemaphoreHandle_t xAmbulanceSemaphore;
@@ -12,33 +13,50 @@ SemaphoreHandle_t xCovidSemaphore;
 //? does the vtaskDispatcher need to call them
 void vPoliceTask(void* param) {
     SemaphoreHandle_t xBorrowedSemaphore = NULL;
+    LogEntry_t logEntry;
+    TickType_t taskStartTime;
+    TickType_t taskDuration;
     for (;;) {
+        taskStartTime = xTaskGetTickCount(); // Record start time
         // Block until a notification is received from the dispatcher
         //ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait indefinitely for a notification
         if (xSemaphoreTake(xPoliceSemaphore, 0) == pdPASS) { // Blocks until a resource is available
-            printf("Police: Ready to respond to events.\n");
+            initLog(&logEntry, "Resource Acquired", POLICE_CODE, "Police", 0, "Primary Resource Acquired", taskStartTime);
+            logEvent(logEntry);
         }
         else {
             xBorrowedSemaphore = borrowResource(PRIORITY_MEDIUM);
             if (xBorrowedSemaphore) { // is not null
-                printf("Police: Borrowed resource from another department.\n");
+                initLog(&logEntry, "Resource Borrowed", POLICE_CODE, "Police", 0, "Borrowed Resource Acquired succefully", taskStartTime);
+                logEvent(logEntry);
             }
             else {
-                printf("Police: No resources available, waiting...\n");
+                initLog(&logEntry, "Resource Wait", POLICE_CODE, "Police", 0, "Waiting for Primary Resource", taskStartTime);
+                logEvent(logEntry);
                 xSemaphoreTake(xPoliceSemaphore, portMAX_DELAY);  // Wait for primary resource
+                initLog(&logEntry, "Resource Acquired After Wait", POLICE_CODE, "Police", 0, "Primary Resource Acquired", xTaskGetTickCount());
+                logEvent(logEntry);
             }
         }
-        vTaskDelay(pdMS_TO_TICKS((rand()% 4 )*1000));// Randon Task duration
-        // task
+        // Task simulation with random delay
+        int taskDurationMs = (rand() % 4) * 1000;
+        taskDuration = pdMS_TO_TICKS(taskDurationMs);
+        vTaskDelay(taskDuration);
+
+        initLog(&logEntry, "Task Completed", POLICE_CODE, "Police", taskDurationMs, "Task Completed Successfully", xTaskGetTickCount());
+        logEvent(logEntry);
+
         // Release resource back to the appropriate semaphore
         if (xBorrowedSemaphore) {
             xSemaphoreGive(xBorrowedSemaphore);  // Return borrowed resource
             xBorrowedSemaphore = NULL;           // Reset tracking variable
-            printf("Police: Released borrowed resource.\n");
+            initLog(&logEntry, "Resource Released", POLICE_CODE, "Police", 0, "Borrowed Resource Released", xTaskGetTickCount());
+            logEvent(logEntry);
         }
         else {
             xSemaphoreGive(xPoliceSemaphore);  // Return primary resource
-            printf("Police: Released primary resource.\n");
+            initLog(&logEntry, "Resource Released", POLICE_CODE, "Police", 0, "Primary Resource Released", xTaskGetTickCount());
+            logEvent(logEntry);
         }
     }
 }

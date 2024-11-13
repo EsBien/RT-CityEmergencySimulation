@@ -46,6 +46,12 @@ extern SemaphoreHandle_t xFireSemaphore;
 extern SemaphoreHandle_t xCovidSemaphore;
 //extern SemaphoreHandle_t xBorrowedSemaphore;
 
+//Mutec for each department resources
+extern SemaphoreHandle_t xPoliceMutex;
+extern SemaphoreHandle_t xAmbulanceMutex;
+extern SemaphoreHandle_t xFireMutex;
+extern SemaphoreHandle_t xCovidMutex;
+
 // Utility function to check if a semaphore has any available resources
 int isResourceAvailable(const  SemaphoreHandle_t semaphore);
 // Function for a department to borrow a resource from another department

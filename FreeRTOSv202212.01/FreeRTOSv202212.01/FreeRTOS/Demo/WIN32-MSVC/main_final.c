@@ -22,6 +22,12 @@ int main_final(void) {
     xFireSemaphore = xSemaphoreCreateCounting(FIRE_SIZE, 0);
     xCovidSemaphore = xSemaphoreCreateCounting(CORONA_SIZE, 0);
 
+    //create mutex
+    xPoliceMutex = xSemaphoreCreateMutex();
+    xAmbulanceMutex = xSemaphoreCreateMutex();
+    xFireMutex = xSemaphoreCreateMutex();
+    xCovidMutex = xSemaphoreCreateMutex();
+
     // create task
     xTaskCreate(vDispatcherTask, "Dispatcher Task", configMINIMAL_STACK_SIZE, NULL, PRIORITY_HIGH, NULL);
     xTaskCreate(vPoliceTask, "Police Task", configMINIMAL_STACK_SIZE, NULL, PRIORITY_LOW, NULL);

@@ -8,6 +8,12 @@ SemaphoreHandle_t xFireSemaphore;
 SemaphoreHandle_t xCovidSemaphore;
 //SemaphoreHandle_t xBorrowedSemaphore;
 
+// Mutex declaration
+SemaphoreHandle_t xPoliceMutex;
+SemaphoreHandle_t xAmbulanceMutex;
+SemaphoreHandle_t xFireMutex;
+SemaphoreHandle_t xCovidMutex;
+
 
 
 //? does the vtaskDispatcher need to call them
@@ -206,6 +212,7 @@ void vCoranaTask(void* param) {
     }
 }
 
+
 int isResourceAvailable(const SemaphoreHandle_t semaphore) {
     UBaseType_t count = uxSemaphoreGetCount(semaphore);
     return count > 0;
@@ -214,23 +221,43 @@ int isResourceAvailable(const SemaphoreHandle_t semaphore) {
 SemaphoreHandle_t borrowResource(int requestingDepartmentPriority) {
     // Check other department resources in priority order
     if (requestingDepartmentPriority == PRIORITY_HIGH) {
-        if (isResourceAvailable(xAmbulanceSemaphore) && xSemaphoreTake(xAmbulanceSemaphore, 0) == pdPASS) {
-            printf("Resource borrowed from Ambulance.\n");
-            return xAmbulanceSemaphore;
-        }
-        else if (isResourceAvailable(xFireSemaphore) && xSemaphoreTake(xFireSemaphore, 0) == pdPASS) {
-            printf("Resource borrowed from Fire.\n");
-            return xFireSemaphore;
+        if (xSemaphoreTake(xAmbulanceMutex, 0) == pdPASS) {
+            if (xSemaphoreTake(xAmbulanceSemaphore, 0) == pdPASS) {
+                printf("Resource borrowed from Ambulance.\n");
+                return xAmbulanceSemaphore;
+            }
+            else {
+                xSemaphoreGive(xAmbulanceMutex);
+            }
+        }     
+        else if (xSemaphoreTake(xFireSemaphore, 0) == pdPASS) {
+            if ( xSemaphoreTake(xFireSemaphore, 0) == pdPASS) {
+                printf("Resource borrowed from Fire.\n");
+                return xFireSemaphore;
+            }
+            else {
+                xSemaphoreGive(xFireSemaphore);
+            }
         }
     }
-    else if (isResourceAvailable(xPoliceSemaphore) && xSemaphoreTake(xPoliceSemaphore, 0) == pdPASS) {
-        printf("Resource borrowed from Police.\n");
-        return xPoliceSemaphore;
+    else if (xSemaphoreTake(xPoliceSemaphore, 0) == pdPASS) {
+        if (xSemaphoreTake(xPoliceSemaphore, 0) == pdPASS) {
+            printf("Resource borrowed from Police.\n");
+            return xPoliceSemaphore;
+        }
+        else {
+            xSemaphoreGive(xPoliceSemaphore);
+        }
     }
     
-    else if (isResourceAvailable(xCovidSemaphore) && xSemaphoreTake(xCovidSemaphore, 0) == pdPASS) {
-        printf("Resource borrowed from covid.\n");
-        return xCovidSemaphore;
+    else if (xSemaphoreTake(xCovidSemaphore, 0) == pdPASS){
+        if (isResourceAvailable(xCovidSemaphore) && xSemaphoreTake(xCovidSemaphore, 0) == pdPASS) {
+            printf("Resource borrowed from covid.\n");
+            return xCovidSemaphore;
+        }
+        else{
+            xSemaphoreGive(xCovidSemaphore)
+        }
     }
     return NULL;  // No resources available to borrow
 }

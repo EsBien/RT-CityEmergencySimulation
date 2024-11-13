@@ -60,97 +60,148 @@ void vPoliceTask(void* param) {
         }
     }
 }
+
 void vAmbulanceTask(void* param) {
     SemaphoreHandle_t xBorrowedSemaphore = NULL;
+    LogEntry_t logEntry = {0};
+    TickType_t taskStartTime;
+    TickType_t taskDuration;
     for (;;) {
-
+        taskStartTime = xTaskGetTickCount();
         if (xSemaphoreTake(xAmbulanceSemaphore, 0) == pdPASS) {
-            printf("Ambulance: Ready to respond to events.\n");
+            initLog(&logEntry, "Resource Acquired", AMBULANCE_CODE, "Ambulance", 0, "Primary Resource Acquired", taskStartTime);
+            logEvent(logEntry);
         }
         else {
             xBorrowedSemaphore = borrowResource(PRIORITY_HIGH);
             if (xBorrowedSemaphore) { // is not null
-                printf("Ambulance: Borrowed resource from another department.\n");
+                initLog(&logEntry, "Resource Borrowed", AMBULANCE_CODE, "Ambulance", 0, "Borrowed Resource Acquired succefully", taskStartTime);
+                logEvent(logEntry);
             }
             else {
-                printf("--Ambulance: No resources available, waiting...\n");
+                initLog(&logEntry, "Resource Wait", AMBULANCE_CODE, "Ambulance", 0, "No resources available, waiting...", taskStartTime);
+                logEvent(logEntry);
                 xSemaphoreTake(xAmbulanceSemaphore, portMAX_DELAY);  // Wait for primary resource
+                initLog(&logEntry, "Resource Acquired After Wait", AMBULANCE_CODE, "Ambulance", 0, "Primary Resource Acquired", xTaskGetTickCount());
+                logEvent(logEntry);
             }
         }
         
-        vTaskDelay(pdMS_TO_TICKS((rand() % 4) * 1000));// Randon Task duration
+        int taskDurationMs = (rand() % 4) * 1000;
+        taskDuration = pdMS_TO_TICKS(taskDurationMs);
+        vTaskDelay(taskDuration);
+
+        initLog(&logEntry, "Task Completed", AMBULANCE_CODE, "Ambulance", taskDurationMs, "Task Completed Successfully", xTaskGetTickCount());
+        logEvent(logEntry);
 
         // Release resource back to the appropriate semaphore
         if (xBorrowedSemaphore) {
             xSemaphoreGive(xBorrowedSemaphore);  // Return borrowed resource
             xBorrowedSemaphore = NULL;           // Reset tracking variable
-            printf("Ambulance: Released borrowed resource.\n");
+            initLog(&logEntry, "Released resource", AMBULANCE_CODE, "Ambulance", 0, "Released borrowed resource", xTaskGetTickCount());
+            logEvent(logEntry);
         }
         else {
             xSemaphoreGive(xAmbulanceSemaphore);  // Return primary resource
-            printf("Ambulance: Released primary resource.\n");
+            initLog(&logEntry, "Primary Released resource", AMBULANCE_CODE, "Ambulance", 0, "Released Primary resource", xTaskGetTickCount());
+            logEvent(logEntry);
         }
     }
 }
+
 void vFireTask(void* param) {
     SemaphoreHandle_t xBorrowedSemaphore = NULL;
+    LogEntry_t logEntry = { 0 };
+    TickType_t taskStartTime;
+    TickType_t taskDuration;
     for (;;) {
+        taskStartTime = xTaskGetTickCount();
         if (xSemaphoreTake(xFireSemaphore, 0) == pdPASS) {
-            printf("Fire Department: Ready to respond to events.\n");
+            initLog(&logEntry, "Resource Acquired", FIRE_CODE, "Fire", 0, "Primary Resource Acquired", taskStartTime);
+            logEvent(logEntry);
         }
         else {
             xBorrowedSemaphore = borrowResource(PRIORITY_HIGH);
             if (xBorrowedSemaphore) { // is not null
-                printf("Fire: Borrowed resource from another department.\n");
+                initLog(&logEntry, "Resource Borrowed", FIRE_CODE, "Fire", 0, "Borrowed Resource Acquired succefully", taskStartTime);
+                logEvent(logEntry);
             }
             else {
-                printf("Fire: No resources available, waiting...\n");
+                initLog(&logEntry, "Resource Wait", FIRE_CODE, "fire", 0, "No resources available, waiting...", taskStartTime);
+                logEvent(logEntry);
                 xSemaphoreTake(xFireSemaphore, portMAX_DELAY);  // Wait for primary resource
+                initLog(&logEntry, "Resource Acquired After Wait", FIRE_CODE, "Fire", 0, "Primary Resource Acquired", xTaskGetTickCount());
+                logEvent(logEntry);
             }
         }
         
-        vTaskDelay(pdMS_TO_TICKS((rand() % 4) * 1000));// Randon Task duration
+        int taskDurationMs = (rand() % 4) * 1000;
+        taskDuration = pdMS_TO_TICKS(taskDurationMs);
+        vTaskDelay(taskDuration);
+
+        initLog(&logEntry, "Task Completed", FIRE_CODE, "Fire", taskDurationMs, "Task Completed Successfully", xTaskGetTickCount());
+        logEvent(logEntry);
 
         // Release resource back to the appropriate semaphore
         if (xBorrowedSemaphore) {
             xSemaphoreGive(xBorrowedSemaphore);  // Return borrowed resource
             xBorrowedSemaphore = NULL;           // Reset tracking variable
-            printf("Fire: Released borrowed resource.\n");
+            initLog(&logEntry, "Released resource", FIRE_CODE, "Fire", 0, "Released borrowed resource", xTaskGetTickCount());
+            logEvent(logEntry);
         }
         else {
             xSemaphoreGive(xFireSemaphore);  // Return primary resource
-            printf("Fire: Released primary resource.\n");
+            initLog(&logEntry, "Primary Released resource", FIRE_CODE, "Fire", 0, "Released Primary resource", xTaskGetTickCount());
+            logEvent(logEntry);
         }
     }
 }
+
 void vCoranaTask(void* param) {
     SemaphoreHandle_t xBorrowedSemaphore = NULL;
+    LogEntry_t logEntry = { 0 };
+    TickType_t taskStartTime;
+    TickType_t taskDuration;
     for (;;) {
-
+        taskStartTime = xTaskGetTickCount();
         if (xSemaphoreTake(xCovidSemaphore, 0) == pdPASS) {
-            printf("Covid Department: Ready to respond to events.\n");
+            initLog(&logEntry, "Resource Acquired", CORONA_CODE, "Corana", 0, "Primary Resource Acquired", taskStartTime);
+            logEvent(logEntry);
         }
         else {
             xBorrowedSemaphore = borrowResource(PRIORITY_LOW);
             if (xBorrowedSemaphore) { // is not null
                 printf("Covid: Borrowed resource from another department.\n");
+                initLog(&logEntry, "Resource Borrowed", CORONA_CODE, "corona", 0, "Borrowed Resource Acquired succefully", taskStartTime);
+                logEvent(logEntry);
             }
             else {
-                printf("Covid: No resources available, waiting...\n");
+                initLog(&logEntry, "Resource Wait", CORONA_CODE, "Corana", 0, "No resources available, waiting...", taskStartTime);
+                logEvent(logEntry);
                 xSemaphoreTake(xCovidSemaphore, portMAX_DELAY);  // Wait for primary resource
+                initLog(&logEntry, "Resource Acquired After Wait", CORONA_CODE, "Corana", 0, "Primary Resource Acquired", xTaskGetTickCount());
+                logEvent(logEntry);
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS((rand() % 4) * 1000));// Randon Task duration
+        int taskDurationMs = (rand() % 4) * 1000;
+        taskDuration = pdMS_TO_TICKS(taskDurationMs);
+        vTaskDelay(taskDuration);
+
+        initLog(&logEntry, "Task Completed", CORONA_CODE, "Corana", taskDurationMs, "Task Completed Successfully", xTaskGetTickCount());
+        logEvent(logEntry);
+
         // Release resource back to the appropriate semaphore
         if (xBorrowedSemaphore) {
             xSemaphoreGive(xBorrowedSemaphore);  // Return borrowed resource
             xBorrowedSemaphore = NULL;           // Reset tracking variable
-            printf("Corana: Released borrowed resource.\n");
+            initLog(&logEntry, "Released resource", CORONA_CODE, "Corana", 0, "Released borrowed resource", xTaskGetTickCount());
+            logEvent(logEntry);
         }
         else {
             xSemaphoreGive(xCovidSemaphore);  // Return primary resource
-            printf("Corana: Released primary resource.\n");
+            initLog(&logEntry, "Primary Released resource", CORONA_CODE, "Corana", 0, "Released Primary resource", xTaskGetTickCount());
+            logEvent(logEntry);
         }
     }
 }
@@ -159,6 +210,7 @@ int isResourceAvailable(const SemaphoreHandle_t semaphore) {
     UBaseType_t count = uxSemaphoreGetCount(semaphore);
     return count > 0;
 }
+
 SemaphoreHandle_t borrowResource(int requestingDepartmentPriority) {
     // Check other department resources in priority order
     if (requestingDepartmentPriority == PRIORITY_HIGH) {
@@ -182,7 +234,3 @@ SemaphoreHandle_t borrowResource(int requestingDepartmentPriority) {
     }
     return NULL;  // No resources available to borrow
 }
-//void logEvent(const char* action, EmergencyEvent_t event) {
-//    printf("[%s] Event ID: %d | Code: %d | Priority: %d | Message: %s\n",
-//        action, event.eventID, event.eventCode, event.priority, event.message);
-//}
